@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a2a2e">
+<title>Workout</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #2a2a2e;
+    --tile: #3a3a3f;
+    --row: #45454b;
+    --input: #1b1b1e;
+    --line: #55555c;
+    --text: #f4f4f6;
+    --muted: #9c9ca4;
+    --green: #34d36a;
+    --green-ink: #06210f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    touch-action: manipulation;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+  }
+  button, input { font-family: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .app {
+    width: min(430px, 100%);
+    height: 100dvh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+  .topbar {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: calc(52px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 6px 0;
+    border-bottom: 1px solid #35353a;
+  }
+  .iconbtn, .elapsed, .rest {
+    border: 0;
+    background: transparent;
+  }
+  .iconbtn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    color: var(--text);
+    border-radius: 12px;
+  }
+  .elapsed {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + env(safe-area-inset-top) / 2);
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    padding: 8px 14px;
+    color: #f4f4f6;
+  }
+  .elapsed.run { color: var(--green); }
+  .rest {
+    min-width: 68px;
+    text-align: right;
+    font-size: 16px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    color: #b7b7bf;
+    padding: 8px 12px;
+  }
+  .rest.hot { color: #ffd60a; }
+  .rest.ding { color: var(--green); }
+  .strip {
+    flex: none;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 12px 14px 8px;
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar { display: none; }
+  .thumb {
+    flex: none;
+    width: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #f3f3f5;
+  }
+  .fig {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    background: var(--tile);
+    display: grid;
+    place-items: center;
+  }
+  .thumb.sel .fig { background: #4a4a50; }
+  .fig.add {
+    background: transparent;
+    border: 1.5px dashed #6d6d74;
+  }
+  .fig svg { width: 42px; height: 42px; display: block; }
+  .fig svg path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .fig svg circle { fill: currentColor; stroke: none; }
+  .bar {
+    width: 28px;
+    height: 3px;
+    border-radius: 99px;
+    background: transparent;
+  }
+  .thumb.sel .bar { background: #fff; }
+  .plus {
+    width: 18px;
+    height: 18px;
+    position: relative;
+  }
+  .plus::before, .plus::after {
+    content: "";
+    position: absolute;
+    background: #f2f2f4;
+    border-radius: 1px;
+  }
+  .plus::before { left: 8px; top: 0; width: 2px; height: 18px; }
+  .plus::after { left: 0; top: 8px; width: 18px; height: 2px; }
+  main {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 14px 0;
+  }
+  .titles { flex: 1; min-width: 0; }
+  .name, .name-input {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+  .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .name-input {
+    border-bottom: 2px solid var(--green);
+    border-radius: 0;
+    outline: none;
+    font-size: 22px;
+  }
+  .sub {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .pill {
+    flex: none;
+    background: var(--green);
+    color: var(--green-ink);
+    border-radius: 16px;
+    padding: 7px 10px 8px;
+    text-align: center;
+    min-width: 118px;
+  }
+  .pill .a {
+    font-size: 14px;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .pill .b {
+    margin-top: 1px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .chips {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    border: 1px solid #5e5e66;
+    background: transparent;
+    color: #ececf0;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .chip.star {
+    width: 36px;
+    height: 32px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  .chip.on {
+    border-color: var(--green);
+    color: var(--green);
+    background: #24362b;
+  }
+  .chip.star.on { color: #ffd60a; border-color: #ffd60a; background: #3a3420; }
+  .panel {
+    margin: 0 14px 8px;
+    background: #34343a;
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: #d7d7de;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .panel .pt { font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .table { padding: 4px 10px 8px; }
+  .grid {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) 64px 48px 36px;
+    column-gap: 6px;
+    align-items: center;
+  }
+  .colhead {
+    padding: 2px 4px 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .colhead span:nth-child(1),
+  .colhead span:nth-child(3),
+  .colhead span:nth-child(4) { text-align: center; }
+  .autoh { padding-left: 22px; }
+  .set {
+    padding: 7px 4px;
+    border-radius: 12px;
+  }
+  .set.current {
+    background: var(--row);
+    box-shadow: inset 3px 0 0 var(--green);
+  }
+  .setno {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #d2d2d8;
+  }
+  .set.current .setno { color: #fff; }
+  .auto {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .rx {
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.25;
+    color: #c8c8d0;
+  }
+  .set.current .rx { color: #fff; font-weight: 650; }
+  .set.done .rx { color: #8e8e96; }
+  .badge {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+  .badge.r1 { background: #ff453a; color: #fff; }
+  .badge.r2 { background: #ff9f0a; color: #1c1202; }
+  .badge.r3 { background: #ffd60a; color: #1c1602; }
+  .badge.rn { background: #30d158; color: #06210f; }
+  .badge.w { background: #8e8e93; color: #1c1c1e; }
+  .num {
+    width: 100%;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid #4e4e55;
+    background: var(--input);
+    color: #fff;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 650;
+    padding: 0 2px;
+  }
+  .num:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+  .set.current .num { border-color: #6a6a72; }
+  .set.current .num:focus { border-color: var(--green); }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  .check {
+    width: 36px;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  .check i {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #7d7d85;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+  }
+  .set.current .check i { border-color: #f2f2f4; }
+  .check.on i {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .addset {
+    margin: 12px auto 4px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid #5c5c64;
+    background: var(--tile);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  .addset .plus::before, .addset .plus::after { background: #fff; }
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+  }
+  .drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(300px, 86%);
+    background: #242428;
+    padding: calc(18px + env(safe-area-inset-top)) 16px 18px;
+    box-shadow: 8px 0 28px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+  .drawer h2 {
+    margin: 6px 0 2px;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+  .drawer p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+  .drow {
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: #323238;
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .drow.cur { box-shadow: inset 3px 0 0 var(--green); }
+  .danger {
+    margin-top: auto;
+    border: 0;
+    background: #3a2426;
+    color: #ff6b63;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .danger.confirm { background: #ff453a; color: #fff; }
+  .linkish {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+(function () {
+  var KEY = "workout-app-session-v1";
+  var REST_SEC = 90;
+
+  var ICONS = {
+    squat:
+      '<circle cx="24" cy="10" r="3.1"/>' +
+      '<path d="M11 16.5h26"/>' +
+      '<path d="M16 16.5v5.5M32 16.5v5.5"/>' +
+      '<path d="M24 13.2v8.3"/>' +
+      '<path d="M24 21.5 15.5 32 18.2 41"/>' +
+      '<path d="M24 21.5 32.5 32 29.8 41"/>',
+    bench:
+      '<path d="M6 35h36"/>' +
+      '<circle cx="13" cy="29.2" r="3"/>' +
+      '<path d="M16 30.2h17"/>' +
+      '<path d="M33 30.2 39 35.5"/>' +
+      '<path d="M22 30 20.2 19.5M27 30 29.2 19.5"/>' +
+      '<path d="M13.5 19.5h21"/>',
+    row:
+      '<circle cx="14" cy="14" r="3"/>' +
+      '<path d="M16.8 16.5 33 27"/>' +
+      '<path d="M33 27 42 40M33 27 26 40"/>' +
+      '<path d="M25 22.5 23.5 33"/>' +
+      '<path d="M15 33h17"/>',
+    deadlift:
+      '<circle cx="29" cy="9" r="3"/>' +
+      '<path d="M27.6 12 21 25"/>' +
+      '<path d="M21 25 15.5 41M21 25 30 41"/>' +
+      '<path d="M24 17.5 17.5 31"/>' +
+      '<path d="M9 31h17"/>',
+    ohp:
+      '<path d="M12 8h24"/>' +
+      '<path d="M17 8 21 18M31 8 27 18"/>' +
+      '<circle cx="24" cy="21.5" r="3"/>' +
+      '<path d="M24 24.5v8"/>' +
+      '<path d="M24 32.5 17.5 42M24 32.5 30.5 42"/>',
+    generic:
+      '<circle cx="24" cy="9.5" r="3"/>' +
+      '<path d="M24 12.5v14"/>' +
+      '<path d="M24 18 15 25M24 18 33 25"/>' +
+      '<path d="M12 23.5h7M29 23.5h7"/>' +
+      '<path d="M24 26.5 18 41M24 26.5 30 41"/>'
+  };
+
+  function svg(name) {
+    return '<svg viewBox="0 0 48 48" aria-hidden="true">' + (ICONS[name] || ICONS.generic) + "</svg>";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function round1(n) {
+    return Math.round(n * 10) / 10;
+  }
+
+  function bestEpley(ex) {
+    var best = 0;
+    (ex.sets || []).forEach(function (s) {
+      var w = parseFloat(s.lb);
+      var r = parseFloat(s.reps);
+      if (!isFinite(w) || w <= 0) return;
+      var reps = isFinite(r) && r > 0 ? r : 0;
+      var e = w * (1 + reps / 30);
+      if (e > best) best = e;
+    });
+    return best;
+  }
+
+  function stats(ex) {
+    var e = bestEpley(ex);
+    if (!(e > 0)) return null;
+    var top = round1(e * (Number(ex.scale) || 1));
+    var baseline = Number(ex.baseline) || 0;
+    var delta = round1(top - baseline);
+    var pct = top !== 0 ? Math.round((delta / top) * 100) : 0;
+    return { top: top, delta: delta, pct: pct };
+  }
+
+  function fmt1(n) {
+    return (Math.round(n * 10) / 10).toFixed(1);
+  }
+
+  function pillText(st) {
+    if (!st) return { a: "—", b: "" };
+    var sign = st.delta > 0 ? "+" : "";
+    return {
+      a: fmt1(st.top) + " lb",
+      b: sign + fmt1(st.delta) + " lb (" + st.pct + "%)"
+    };
+  }
+
+  function defaultState() {
+    var exercises = [
+      {
+        id: "fs",
+        name: "Front Squat",
+        icon: "squat",
+        starred: false,
+        showInfo: false,
+        showTargets: false,
+        info: "Barbell front squat. Elbows high, brace hard, and sit between your heels.",
+        scale: 1,
+        baseline: 45.2,
+        sets: [
+          { rx: "4-6 reps / 1 RIR", lb: 135, reps: 5, done: true, rir: 1, warm: false },
+          { rx: "125 lb x 4-6 / 2 RIR", lb: 125, reps: 4, done: true, rir: 2, warm: false },
+          { rx: "115 lb x 4-6 / 3 RIR", lb: 115, reps: 5, done: true, rir: 3, warm: false },
+          { rx: "115 lb x 4-6 / 3 RIR", lb: 115, reps: 5, done: false, rir: 3, warm: false }
+        ]
+      },
+      {
+        id: "bp",
+        name: "Bench Press",
+        icon: "bench",
+        starred: false,
+        showInfo: false,
+        showTargets: false,
+        info: "Touch the chest, feet planted, and press the bar back over the shoulders.",
+        scale: 1,
+        baseline: 150,
+        sets: [
+          { rx: "6-8 reps / 2 RIR", lb: 155, reps: 6, done: true, rir: 2, warm: false },
+          { rx: "155 lb x 6-8 / 2 RIR", lb: 155, reps: 5, done: true, rir: 2, warm: false },
+          { rx: "145 lb x 6-8 / 3 RIR", lb: 145, reps: 8, done: false, rir: 3, warm: false }
+        ]
+      },
+      {
+        id: "row",
+        name: "Barbell Row",
+        icon: "row",
+        starred: false,
+        showInfo: false,
+        showTargets: false,
+        info: "Hinge until the torso is near parallel and pull the bar to the ribs.",
+        scale: 1,
+        baseline: 140,
+        sets: [
+          { rx: "6-8 reps / 2 RIR", lb: 135, reps: 8, done: true, rir: 2, warm: false },
+          { rx: "135 lb x 6-8 / 2 RIR", lb: 135, reps: 7, done: false, rir: 2, warm: false },
+          { rx: "125 lb x 6-8 / 3 RIR", lb: 125, reps: 8, done: false, rir: 3, warm: false }
+        ]
+      },
+      {
+        id: "rdl",
+        name: "Romanian Deadlift",
+        icon: "deadlift",
+        starred: false,
+        showInfo: false,
+        showTargets: false,
+        info: "Soft knees, hips back, and stop when the hamstrings hit end range.",
+        scale: 1,
+        baseline: 160,
+        sets: [
+          { rx: "6-8 reps / 2 RIR", lb: 185, reps: 6, done: false, rir: 2, warm: false },
+          { rx: "185 lb x 6-8 / 2 RIR", lb: 185, reps: 6, done: false, rir: 2, warm: false },
+          { rx: "175 lb x 6-8 / 3 RIR", lb: 175, reps: 8, done: false, rir: 3, warm: false }
+        ]
+      },
+      {
+        id: "ohp",
+        name: "Overhead Press",
+        icon: "ohp",
+        starred: false,
+        showInfo: false,
+        showTargets: false,
+        info: "Squeeze glutes, ribs down, and press the bar to lockout over the mid-foot.",
+        scale: 1,
+        baseline: 95,
+        sets: [
+          { rx: "5-8 reps / 2 RIR", lb: 95, reps: 6, done: false, rir: 2, warm: false },
+          { rx: "95 lb x 5-8 / 2 RIR", lb: 95, reps: 5, done: false, rir: 2, warm: false },
+          { rx: "85 lb x 5-8 / 3 RIR", lb: 85, reps: 8, done: false, rir: 3, warm: false }
+        ]
+      }
+    ];
+    var fs = exercises[0];
+    var e = bestEpley(fs) || 1;
+    fs.scale = 187.6 / e;
+    fs.baseline = 45.2;
+    return {
+      elapsed: 15 * 60 + 53,
+      running: false,
+      anchor: null,
+      restLeft: 0,
+      restAnchor: null,
+      current: 0,
+      exercises: exercises
+    };
+  }
+
+  function valid(s) {
+    return s && typeof s.elapsed === "number" && Array.isArray(s.exercises) && s.exercises.length > 0 &&
+      s.exercises.every(function (e) {
+        return e && typeof e.name === "string" && Array.isArray(e.sets);
+      });
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return defaultState();
+      var s = JSON.parse(raw);
+      if (!valid(s)) return defaultState();
+      if (s.current < 0 || s.current >= s.exercises.length) s.current = 0;
+      return s;
+    } catch (err) {
+      return defaultState();
+    }
+  }
+
+  var state = load();
+  var ui = { menu: false, confirmReset: false, editing: false };
+
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) {}
+  }
+
+  function current() {
+    return state.exercises[state.current];
+  }
+
+  function elapsedNow(now) {
+    now = now || Date.now();
+    if (state.running && state.anchor) return state.elapsed + (now - state.anchor) / 1000;
+    return state.elapsed;
+  }
+
+  function restNow(now) {
+    now = now || Date.now();
+    if (state.restLeft > 0 && state.restAnchor) return state.restLeft - (now - state.restAnchor) / 1000;
+    return state.restLeft || 0;
+  }
+
+  function fmtElapsed(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = sec % 60;
+    return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  function fmtRest(sec) {
+    sec = Math.max(0, Math.ceil(sec - 1e-9));
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ":" + String(s).padStart(2, "0");
+  }
+
+  function subtitle(sets) {
+    if (!sets.length) return "No sets";
+    var i = -1;
+    for (var n = 0; n < sets.length; n++) if (!sets[n].done) { i = n; break; }
+    var num = i === -1 ? sets.length : i + 1;
+    return "Set " + num + " of " + sets.length;
+  }
+
+  function currentIndex(sets) {
+    for (var n = 0; n < sets.length; n++) if (!sets[n].done) return n;
+    return -1;
+  }
+
+  function badge(rir) {
+    if (rir === "W") return '<span class="badge w">W</span>';
+    var n = Number(rir);
+    if (!n) return "";
+    var cls = n === 1 ? "r1" : n === 2 ? "r2" : n === 3 ? "r3" : "rn";
+    return '<span class="badge ' + cls + '">' + n + "</span>";
+  }
+
+  function checkIcon() {
+    return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.2 8.3 6.4 11.4 12.8 4.6" fill="none" stroke="#06210f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+
+  function starIcon(on) {
+    if (on) {
+      return '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 3.2 2.4 5.6 6.1.6-4.6 4 1.3 6-5.2-3.1L6.8 19.4l1.3-6-4.6-4 6.1-.6L12 3.2z"/></svg>';
+    }
+    return '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="m12 3.6 2.3 5.4 5.8.5-4.4 3.8 1.3 5.7L12 16.2 7 19l1.3-5.7L3.9 9.5l5.8-.5L12 3.6z"/></svg>';
+  }
+
+  function paintClocks() {
+    var e = document.getElementById("elapsed");
+    var r = document.getElementById("rest");
+    if (!e || !r) return;
+    e.textContent = fmtElapsed(elapsedNow());
+    e.classList.toggle("run", !!state.running);
+    var rest = restNow();
+    if (state.restAnchor && rest <= 0) {
+      state.restLeft = 0;
+      state.restAnchor = null;
+      rest = 0;
+      r.classList.add("ding");
+      setTimeout(function () { r.classList.remove("ding"); }, 1200);
+      persist();
+    }
+    r.textContent = fmtRest(Math.max(0, rest));
+    r.classList.toggle("hot", rest > 0);
+  }
+
+  function paintPill() {
+    var st = stats(current());
+    var text = pillText(st);
+    var a = document.getElementById("pill-a");
+    var b = document.getElementById("pill-b");
+    if (a) a.textContent = text.a;
+    if (b) b.textContent = text.b;
+  }
+
+  function render() {
+    var ex = current();
+    var sets = ex.sets || [];
+    var st = pillText(stats(ex));
+    var cur = currentIndex(sets);
+    var hasWarm = sets.some(function (s) { return s.warm; });
+
+    var thumbs = state.exercises.map(function (item, i) {
+      return '<button type="button" class="thumb' + (i === state.current ? " sel" : "") + '" data-action="pick" data-i="' + i + '" aria-label="' + esc(item.name) + '"' + (i === state.current ? ' aria-current="true"' : "") + '>' +
+        '<span class="fig">' + svg(item.icon) + "</span>" +
+        '<span class="bar"></span></button>';
+    }).join("");
+
+    var rows = sets.map(function (s, i) {
+      var cls = "grid set" + (s.done ? " done" : "") + (i === cur ? " current" : "");
+      return '<div class="' + cls + '">' +
+        '<div class="setno">' + (i + 1) + "</div>" +
+        '<div class="auto">' + badge(s.rir) + '<span class="rx">' + esc(s.rx) + "</span></div>" +
+        '<input class="num" type="number" inputmode="decimal" step="any" data-field="lb" data-set="' + i + '" value="' + esc(s.lb) + '" aria-label="Set ' + (i + 1) + ' pounds">' +
+        '<input class="num" type="number" inputmode="numeric" step="1" data-field="reps" data-set="' + i + '" value="' + esc(s.reps) + '" aria-label="Set ' + (i + 1) + ' reps">' +
+        '<button type="button" class="check' + (s.done ? " on" : "") + '" data-action="toggle" data-set="' + i + '" role="checkbox" aria-checked="' + (s.done ? "true" : "false") + '" aria-label="Set ' + (i + 1) + ' complete"><i>' + (s.done ? checkIcon() : "") + "</i></button>" +
+        "</div>";
+    }).join("");
+
+    var info = ex.showInfo ? '<div class="panel">' + esc(ex.info || "") + "</div>" : "";
+    var targets = "";
+    if (ex.showTargets) {
+      var lines = sets.filter(function (s) { return !s.warm; }).map(function (s) {
+        return "<div>" + esc(s.rx) + "</div>";
+      }).join("");
+      targets = '<div class="panel"><div class="pt">Targets</div>' + (lines || "<div>No working sets yet.</div>") + "</div>";
+    }
+
+    var nameHtml = ui.editing
+      ? '<input id="name-input" class="name-input" value="' + esc(ex.name) + '" aria-label="Exercise name" autocomplete="off" enterkeyhint="done">'
+      : '<button type="button" class="name" id="ex-name" data-action="rename">' + esc(ex.name) + "</button>";
+
+    var menu = "";
+    if (ui.menu) {
+      var list = state.exercises.map(function (item, i) {
+        return '<button type="button" class="drow' + (i === state.current ? " cur" : "") + '" data-action="pick" data-i="' + i + '">' + esc(item.name) + "</button>";
+      }).join("");
+      var resetBtn = ui.confirmReset
+        ? '<button type="button" class="danger confirm" data-action="reset-yes">Erase session</button><button type="button" class="linkish" data-action="reset-no">Cancel</button>'
+        : '<button type="button" class="danger" data-action="reset-ask">Reset workout</button>';
+      menu = '<div class="scrim" data-action="close-menu"><div class="drawer" data-action="noop">' +
+        "<h2>Workout</h2><p>" + state.exercises.length + " exercises · saved on this device</p>" +
+        list + resetBtn + "</div></div>";
+    }
+
+    document.getElementById("app").innerHTML =
+      '<header class="topbar">' +
+        '<button type="button" class="iconbtn" data-action="menu" aria-label="Menu">' +
+          '<svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><path d="M1 1h18M1 7h18M1 13h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+        "</button>" +
+        '<button type="button" class="elapsed" id="elapsed" data-action="timer" aria-label="Elapsed time, tap to start or pause">0:15:53</button>' +
+        '<button type="button" class="rest" id="rest" data-action="rest" aria-label="Rest timer">0:00</button>' +
+      "</header>" +
+      '<div class="strip">' + thumbs +
+        '<button type="button" class="thumb" data-action="add-ex" aria-label="Add exercise"><span class="fig add"><span class="plus"></span></span><span class="bar"></span></button>' +
+      "</div>" +
+      "<main>" +
+        '<div class="head"><div class="titles">' + nameHtml + '<div class="sub" id="sub">' + esc(subtitle(sets)) + "</div></div>" +
+          '<div class="pill" aria-label="Estimated one-rep max"><div class="a" id="pill-a">' + esc(st.a) + '</div><div class="b" id="pill-b">' + esc(st.b) + "</div></div>" +
+        "</div>" +
+        '<div class="chips">' +
+          '<button type="button" class="chip star' + (ex.starred ? " on" : "") + '" data-action="star" aria-pressed="' + (ex.starred ? "true" : "false") + '" aria-label="Favorite">' + starIcon(!!ex.starred) + "</button>" +
+          '<button type="button" class="chip' + (ex.showInfo ? " on" : "") + '" data-action="info" aria-pressed="' + (ex.showInfo ? "true" : "false") + '">Info</button>' +
+          '<button type="button" class="chip' + (hasWarm ? " on" : "") + '" data-action="warmup" aria-pressed="' + (hasWarm ? "true" : "false") + '">Warm Up</button>' +
+          '<button type="button" class="chip' + (ex.showTargets ? " on" : "") + '" data-action="targets" aria-pressed="' + (ex.showTargets ? "true" : "false") + '">Targets</button>' +
+        "</div>" +
+        info + targets +
+        '<div class="table">' +
+          '<div class="grid colhead"><span>Set</span><span class="autoh">Auto</span><span>Lb</span><span>Reps</span><span></span></div>' +
+          rows +
+          '<button type="button" class="addset" data-action="add-set" aria-label="Add set"><span class="plus"></span></button>' +
+        "</div>" +
+      "</main>" + menu;
+
+    paintClocks();
+    if (ui.editing) {
+      var input = document.getElementById("name-input");
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+  }
+
+  function commitName(value) {
+    if (!ui.editing) return;
+    ui.editing = false;
+    var name = String(value || "").trim();
+    if (name) current().name = name;
+    persist();
+    render();
+  }
+
+  var app = document.getElementById("app");
+
+  app.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-action]");
+    if (!t || !app.contains(t)) return;
+    var action = t.getAttribute("data-action");
+    if (action === "noop") return;
+    if (action === "close-menu") {
+      ui.menu = false;
+      ui.confirmReset = false;
+      render();
+      return;
+    }
+    if (action === "menu") {
+      ui.menu = true;
+      ui.confirmReset = false;
+      ui.editing = false;
+      render();
+      return;
+    }
+    if (action === "timer") {
+      if (state.running) {
+        state.elapsed = elapsedNow();
+        state.running = false;
+        state.anchor = null;
+      } else {
+        state.running = true;
+        state.anchor = Date.now();
+      }
+      persist();
+      paintClocks();
+      return;
+    }
+    if (action === "rest") {
+      if (restNow() > 0) {
+        state.restLeft = 0;
+        state.restAnchor = null;
+      } else {
+        state.restLeft = REST_SEC;
+        state.restAnchor = Date.now();
+      }
+      persist();
+      paintClocks();
+      return;
+    }
+    if (action === "pick") {
+      state.current = Number(t.getAttribute("data-i")) || 0;
+      ui.editing = false;
+      ui.menu = false;
+      ui.confirmReset = false;
+      persist();
+      render();
+      return;
+    }
+    if (action === "add-ex") {
+      state.exercises.push({
+        id: "x" + Date.now(),
+        name: "New Exercise",
+        icon: "generic",
+        starred: false,
+        showInfo: false,
+        showTargets: false,
+        info: "Tap the name to rename this exercise.",
+        scale: 1,
+        baseline: 76,
+        sets: [{ rx: "4-6 reps / 2 RIR", lb: 95, reps: 5, done: false, rir: 2, warm: false }]
+      });
+      state.current = state.exercises.length - 1;
+      ui.editing = true;
+      persist();
+      render();
+      return;
+    }
+    if (action === "rename") {
+      ui.editing = true;
+      render();
+      return;
+    }
+    if (action === "star") {
+      current().starred = !current().starred;
+      persist();
+      render();
+      return;
+    }
+    if (action === "info") {
+      current().showInfo = !current().showInfo;
+      persist();
+      render();
+      return;
+    }
+    if (action === "targets") {
+      current().showTargets = !current().showTargets;
+      persist();
+      render();
+      return;
+    }
+    if (action === "warmup") {
+      var ex = current();
+      if (ex.sets.some(function (s) { return s.warm; })) {
+        ex.sets = ex.sets.filter(function (s) { return !s.warm; });
+      } else {
+        var base = null;
+        for (var i = 0; i < ex.sets.length; i++) if (!ex.sets[i].warm) { base = ex.sets[i]; break; }
+        var w = base ? parseFloat(base.lb) : 45;
+        if (!isFinite(w) || w <= 0) w = 45;
+        var lb = Math.max(5, Math.round((w * 0.5) / 5) * 5);
+        ex.sets.unshift({ rx: "Warm up", lb: lb, reps: 5, done: false, rir: "W", warm: true });
+      }
+      persist();
+      render();
+      return;
+    }
+    if (action === "toggle") {
+      var idx = Number(t.getAttribute("data-set"));
+      var set = current().sets[idx];
+      if (!set) return;
+      set.done = !set.done;
+      if (set.done) {
+        state.restLeft = REST_SEC;
+        state.restAnchor = Date.now();
+      }
+      persist();
+      render();
+      return;
+    }
+    if (action === "add-set") {
+      var list = current().sets;
+      var last = list[list.length - 1];
+      list.push(last ? {
+        rx: last.rx,
+        lb: last.lb,
+        reps: last.reps,
+        done: false,
+        rir: last.warm ? 2 : last.rir,
+        warm: false
+      } : { rx: "4-6 reps / 2 RIR", lb: 95, reps: 5, done: false, rir: 2, warm: false });
+      persist();
+      render();
+      var fields = document.querySelectorAll('.num[data-field="lb"]');
+      if (fields.length) fields[fields.length - 1].focus();
+      return;
+    }
+    if (action === "reset-ask") {
+      ui.confirmReset = true;
+      render();
+      return;
+    }
+    if (action === "reset-no") {
+      ui.confirmReset = false;
+      render();
+      return;
+    }
+    if (action === "reset-yes") {
+      state = defaultState();
+      ui.menu = false;
+      ui.confirmReset = false;
+      ui.editing = false;
+      persist();
+      render();
+    }
+  });
+
+  app.addEventListener("input", function (e) {
+    var field = e.target.getAttribute("data-field");
+    if (!field) return;
+    var i = Number(e.target.getAttribute("data-set"));
+    var set = current().sets[i];
+    if (!set) return;
+    set[field] = e.target.value;
+    paintPill();
+    persist();
+  });
+
+  app.addEventListener("keydown", function (e) {
+    if (e.target.id === "name-input" && e.key === "Enter") {
+      e.preventDefault();
+      commitName(e.target.value);
+    } else if (e.key === "Escape") {
+      if (ui.editing) {
+        ui.editing = false;
+        render();
+      } else if (ui.menu) {
+        ui.menu = false;
+        ui.confirmReset = false;
+        render();
+      }
+    }
+  });
+
+  app.addEventListener("focusout", function (e) {
+    if (e.target.id === "name-input") commitName(e.target.value);
+  });
+
+  app.addEventListener("focusin", function (e) {
+    if (e.target.classList && e.target.classList.contains("num")) {
+      var el = e.target;
+      setTimeout(function () {
+        el.scrollIntoView({ block: "nearest" });
+      }, 60);
+    }
+  });
+
+  window.addEventListener("pagehide", persist);
+
+  setInterval(paintClocks, 250);
+  render();
+})();
+</script>
+</body>
+</html>
