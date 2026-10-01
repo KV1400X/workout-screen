@@ -444,7 +444,7 @@
 <div class="app" id="app"></div>
 <script>
 (function () {
-  var KEY = "workout-app-session-v1";
+  var KEY = "workout-app-session-v3";
   var REST_SEC = 90;
 
   var ICONS = {
@@ -543,93 +543,56 @@
   function defaultState() {
     var exercises = [
       {
-        id: "fs",
-        name: "Front Squat",
-        icon: "squat",
-        starred: false,
+        id: "dl",
+        name: "Deadlift",
+        icon: "deadlift",
+        starred: true,
         showInfo: false,
         showTargets: false,
-        info: "Barbell front squat. Elbows high, brace hard, and sit between your heels.",
+        info: "Monday deadlift. Logged 5s from 8-24-26: 240, 277, 315. Suggested working sets stay at 240, 275, 315 for five. Squat max in the log is 285 on 9-10-26 as a double. Deadlift max in the log is 355 on 6-29-26.",
         scale: 1,
-        baseline: 45.2,
+        baseline: 0,
         sets: [
-          { rx: "4-6 reps / 1 RIR", lb: 135, reps: 5, done: true, rir: 1, warm: false },
-          { rx: "125 lb x 4-6 / 2 RIR", lb: 125, reps: 4, done: true, rir: 2, warm: false },
-          { rx: "115 lb x 4-6 / 3 RIR", lb: 115, reps: 5, done: true, rir: 3, warm: false },
-          { rx: "115 lb x 4-6 / 3 RIR", lb: 115, reps: 5, done: false, rir: 3, warm: false }
-        ]
-      },
-      {
-        id: "bp",
-        name: "Bench Press",
-        icon: "bench",
-        starred: false,
-        showInfo: false,
-        showTargets: false,
-        info: "Touch the chest, feet planted, and press the bar back over the shoulders.",
-        scale: 1,
-        baseline: 150,
-        sets: [
-          { rx: "6-8 reps / 2 RIR", lb: 155, reps: 6, done: true, rir: 2, warm: false },
-          { rx: "155 lb x 6-8 / 2 RIR", lb: 155, reps: 5, done: true, rir: 2, warm: false },
-          { rx: "145 lb x 6-8 / 3 RIR", lb: 145, reps: 8, done: false, rir: 3, warm: false }
+          { rx: "5 reps", lb: 240, reps: 5, done: false, rir: "", warm: false },
+          { rx: "5 reps", lb: 275, reps: 5, done: false, rir: "", warm: false },
+          { rx: "5 reps", lb: 315, reps: 5, done: false, rir: "", warm: false }
         ]
       },
       {
         id: "row",
-        name: "Barbell Row",
+        name: "Dumbbell Row",
         icon: "row",
         starred: false,
         showInfo: false,
         showTargets: false,
-        info: "Hinge until the torso is near parallel and pull the bar to the ribs.",
+        info: "3 rounds of 10 at 40 lb.",
         scale: 1,
-        baseline: 140,
+        baseline: 0,
         sets: [
-          { rx: "6-8 reps / 2 RIR", lb: 135, reps: 8, done: true, rir: 2, warm: false },
-          { rx: "135 lb x 6-8 / 2 RIR", lb: 135, reps: 7, done: false, rir: 2, warm: false },
-          { rx: "125 lb x 6-8 / 3 RIR", lb: 125, reps: 8, done: false, rir: 3, warm: false }
+          { rx: "10 reps", lb: 40, reps: 10, done: false, rir: "", warm: false },
+          { rx: "10 reps", lb: 40, reps: 10, done: false, rir: "", warm: false },
+          { rx: "10 reps", lb: 40, reps: 10, done: false, rir: "", warm: false }
         ]
       },
       {
-        id: "rdl",
-        name: "Romanian Deadlift",
-        icon: "deadlift",
+        id: "hollow",
+        name: "Hollow Rocks",
+        icon: "squat",
         starred: false,
         showInfo: false,
         showTargets: false,
-        info: "Soft knees, hips back, and stop when the hamstrings hit end range.",
+        info: "3 rounds of 10. No farmer carry. Left shoulder is the limiter, so no overhead today.",
         scale: 1,
-        baseline: 160,
+        baseline: 0,
         sets: [
-          { rx: "6-8 reps / 2 RIR", lb: 185, reps: 6, done: false, rir: 2, warm: false },
-          { rx: "185 lb x 6-8 / 2 RIR", lb: 185, reps: 6, done: false, rir: 2, warm: false },
-          { rx: "175 lb x 6-8 / 3 RIR", lb: 175, reps: 8, done: false, rir: 3, warm: false }
-        ]
-      },
-      {
-        id: "ohp",
-        name: "Overhead Press",
-        icon: "ohp",
-        starred: false,
-        showInfo: false,
-        showTargets: false,
-        info: "Squeeze glutes, ribs down, and press the bar to lockout over the mid-foot.",
-        scale: 1,
-        baseline: 95,
-        sets: [
-          { rx: "5-8 reps / 2 RIR", lb: 95, reps: 6, done: false, rir: 2, warm: false },
-          { rx: "95 lb x 5-8 / 2 RIR", lb: 95, reps: 5, done: false, rir: 2, warm: false },
-          { rx: "85 lb x 5-8 / 3 RIR", lb: 85, reps: 8, done: false, rir: 3, warm: false }
+          { rx: "10 reps", lb: "", reps: 10, done: false, rir: "", warm: false },
+          { rx: "10 reps", lb: "", reps: 10, done: false, rir: "", warm: false },
+          { rx: "10 reps", lb: "", reps: 10, done: false, rir: "", warm: false }
         ]
       }
     ];
-    var fs = exercises[0];
-    var e = bestEpley(fs) || 1;
-    fs.scale = 187.6 / e;
-    fs.baseline = 45.2;
     return {
-      elapsed: 15 * 60 + 53,
+      elapsed: 0,
       running: false,
       anchor: null,
       restLeft: 0,
@@ -803,7 +766,7 @@
         ? '<button type="button" class="danger confirm" data-action="reset-yes">Erase session</button><button type="button" class="linkish" data-action="reset-no">Cancel</button>'
         : '<button type="button" class="danger" data-action="reset-ask">Reset workout</button>';
       menu = '<div class="scrim" data-action="close-menu"><div class="drawer" data-action="noop">' +
-        "<h2>Workout</h2><p>" + state.exercises.length + " exercises · saved on this device</p>" +
+        "<h2>Deadlift day</h2><p>" + state.exercises.length + " exercises · saved on this device</p>" +
         list + resetBtn + "</div></div>";
     }
 
